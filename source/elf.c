@@ -1,28 +1,42 @@
+/****
+ *
+ */
+#include <errno.h>
 #include <stdio.h>
-#include <unistd.h>
-
 
 #include "elf.h"
 
+/****
+ *
+ */
+#define EID_OK           0
+#define EID_ERROR        errno
 
-int read_elf_header(const char *filename, Elf64_File *elf_file_ptr)
+
+/****
+ *
+ */
+ int read_elf_header(const char *filename, Elf64_File *elf_file_ptr)
 {
     FILE *pfile = fopen(filename, "rb");
     if (!pfile)
-        return -1;
+        return EID_ERROR;
 
     int count = fread((void *) &elf_file_ptr->ehdr, sizeof(Elf64_Ehdr), 1, pfile);
     if (count < 0)
-        return -2;
+        return EID_ERROR;
 
-    return 0;
+    return EID_OK;
 }
 
 
-void print_elf_header(FILE *ostream, Elf64_File *elf_file_ptr)
+/****
+ *
+ */
+ void print_elf_header(FILE *ostream, Elf64_File *elf_file_ptr)
 {
     fprintf(ostream, "ELF Header:\n");
-    
+
     // Magic
     fprintf(ostream, "  Magic:  ");
     for (int i = 0; i < EI_NIDENT; ++i)
