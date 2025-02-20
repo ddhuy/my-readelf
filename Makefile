@@ -2,7 +2,7 @@
 RM = @rm -rf
 MKDIR = @mkdir -p
 
-# define compiler
+# define toolchain
 CC = gcc
 CXX = g++
 AS = as
@@ -18,7 +18,7 @@ LDFLAGS  =
 
 # source directories & files
 SRC_DIR = source
-SRC_DIRS = $(SRC_DIR) $(SRC_DIR)/lib
+SRC_DIRS = $(SRC_DIR)
 SRCS = $(foreach sdir,$(SRC_DIRS),$(wildcard $(sdir)/*.c))
 
 # output directories & files
