@@ -4,9 +4,14 @@
 
 #include "elf.h"
 
-
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
-    readelf(argv[1]);
-    return EXIT_SUCCESS;
+  Elf64_File elf_file;
+
+  int ret = read_elf_header(argv[1], &elf_file);
+  if (!ret) {
+    print_elf_header(stdout, &elf_file);
+  }
+
+  return EXIT_SUCCESS;
 }

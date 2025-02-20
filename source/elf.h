@@ -1,6 +1,7 @@
 #ifndef _ELF_H_
 #define _ELF_H_
 
+#include <stdio.h>
 #include <stdint.h>
 
 
@@ -1566,6 +1567,14 @@ typedef struct
 	uint8_t name;    /* Start of the name+desc data */
 } Elf64_Note;
 
-void readelf(const char *filename);
+/* ELF File */
+typedef struct
+{
+   Elf64_Ehdr ehdr;
+} Elf64_File;
+
+int read_elf_header(const char *filename, Elf64_File *elf_file_ptr);
+
+void print_elf_header(FILE *ostream, Elf64_File *elf_file_ptr);
 
 #endif /* _ELF_H_ */
