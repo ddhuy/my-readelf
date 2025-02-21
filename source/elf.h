@@ -1571,10 +1571,13 @@ typedef struct
 typedef struct
 {
    Elf64_Ehdr ehdr;
+   Elf64_Phdr phdr[64];
 } Elf64_File;
 
-int read_elf_header(const char *filename, Elf64_File *elf_file_ptr);
+
+int read_elf_file(const char *filename, Elf64_File *elf_file_ptr);
 
 void print_elf_header(FILE *ostream, Elf64_File *elf_file_ptr);
+void print_program_header(FILE *ostream, Elf64_File *elf_file_ptr);
 
 #endif /* _ELF_H_ */

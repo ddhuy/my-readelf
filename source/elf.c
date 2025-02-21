@@ -13,27 +13,40 @@
 #define EID_ERROR        errno
 
 
+
 /****
  *
  */
- int read_elf_header(const char *filename, Elf64_File *elf_file_ptr)
+int read_elf_file(const char *filename, Elf64_File *elf_file_ptr)
 {
+    int ret = EID_ERROR;
+
     FILE *pfile = fopen(filename, "rb");
-    if (!pfile)
-        return EID_ERROR;
+    if (!pfile) 
+        goto _exit;
 
     int count = fread((void *) &elf_file_ptr->ehdr, sizeof(Elf64_Ehdr), 1, pfile);
     if (count < 0)
-        return EID_ERROR;
+        goto _clean;
 
-    return EID_OK;
+    count = fread((void *) elf_file_ptr->phdr, sizeof(Elf64_Phdr), elf_file_ptr->ehdr.e_phnum, pfile);
+    if (count < 0)
+        goto _clean;
+
+    ret = EID_OK;
+
+_clean:
+    fclose(pfile);
+
+_exit:
+    return ret;
 }
 
 
 /****
  *
  */
- void print_elf_header(FILE *ostream, Elf64_File *elf_file_ptr)
+void print_elf_header(FILE *ostream, Elf64_File *elf_file_ptr)
 {
     fprintf(ostream, "ELF Header:\n");
 
@@ -162,4 +175,26 @@
     fprintf(ostream, "  Number of section headers:         %d\n", elf_file_ptr->ehdr.e_shnum);
     fprintf(ostream, "  Section header string table index: %d\n", elf_file_ptr->ehdr.e_shstrndx);
     fprintf(ostream, "\n");
+}
+
+
+/****
+ *
+ */
+void print_program_header(FILE *ostream, Elf64_File *elf_file_ptr)
+{
+    fprintf(ostream, "Program Headers:\n"
+                                    "  Type           Offset             VirtAddr           PhysAddr\n"
+                                    "                 FileSiz            MemSiz              Flags  Align\n");
+    for (int i = 0; i < elf_file_ptr->ehdr.e_phnum; ++i) {
+        fprintf(ostream, "  %-15d", elf_file_ptr->phdr[i].p_type);
+        fprintf(ostream, "0x%016lx ", elf_file_ptr->phdr[i].p_offsets);
+        fprintf(ostream, "0x%016lx ", elf_file_ptr->phdr[i].p_vaddr);
+        fprintf(ostream, "0x%016lx\n", elf_file_ptr->phdr[i].p_paddr);
+        fprintf(ostream, "                 ");
+        fprintf(ostream, "0x%016lx ", elf_file_ptr->phdr[i].p_filesz);
+        fprintf(ostream, "0x%016lx ", elf_file_ptr->phdr[i].p_memsz);
+        fprintf(ostream, " 0x%04x", elf_file_ptr->phdr[i].p_flags);
+        fprintf(ostream, " 0x%lx\n", elf_file_ptr->phdr[i].p_align);
+    }
 }
