@@ -1509,12 +1509,12 @@ typedef struct
 typedef struct
 {
     uint32_t p_type;     /* Segment type */
-    uint32_t p_flags;    /* Segment file offset */
-    uint64_t p_offsets;  /* Segment virtual address */
-    uint64_t p_vaddr;    /* Segment physical address */
-    uint64_t p_paddr;    /* Segment size in file */
-    uint64_t p_filesz;   /* Segment size in memory */
-    uint64_t p_memsz;    /* Segment flags */
+    uint32_t p_flags;    /* Segment flags */
+    uint64_t p_offset;   /* Segment file offset */
+    uint64_t p_vaddr;    /* Segment virtual address */
+    uint64_t p_paddr;    /* Segment physical address */
+    uint64_t p_filesz;   /* Segment size in file */
+    uint64_t p_memsz;    /* Segment size in memory */
     uint64_t p_align;    /* Segment alignment */
 } Elf64_Phdr;
 
@@ -1527,8 +1527,8 @@ typedef struct
     uint64_t sh_addr;       /* Section virtual addr at execution */
     uint64_t sh_offset;     /* Section file offset */
     uint64_t sh_size;       /* Section size in bytes */
-    uint64_t sh_link;       /* Link to another section */
-    uint64_t sh_info;       /* Additional section information */
+    uint32_t sh_link;       /* Link to another section */
+    uint32_t sh_info;       /* Additional section information */
     uint64_t sh_addralign;  /* Section alignment */
     uint64_t sh_entsize;    /* Entry size if section holds table */
 } Elf64_Shdr;
@@ -1570,14 +1570,18 @@ typedef struct
 /* ELF File */
 typedef struct
 {
+   int fd;
+   char *shstrtab;
+   Elf64_Phdr *ph_table;
+   Elf64_Shdr *sh_table;
    Elf64_Ehdr ehdr;
-   Elf64_Phdr phdr[64];
 } Elf64_File;
 
 
-int read_elf_file(const char *filename, Elf64_File *elf_file_ptr);
+int read_elf_file(const char *filename, Elf64_File *elf_file);
+int close_elf_file(Elf64_File *elf_file);
 
-void print_elf_header(FILE *ostream, Elf64_File *elf_file_ptr);
-void print_program_header(FILE *ostream, Elf64_File *elf_file_ptr);
+int print_elf_header(FILE *ostream, Elf64_File *elf_file);
+int print_program_headers(FILE *ostream, Elf64_File *elf_file);
 
 #endif /* _ELF_H_ */

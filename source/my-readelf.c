@@ -11,8 +11,8 @@ int main(int argc, char **argv)
     int ret = read_elf_file(argv[1], &elf_file);
     if (!ret) {
         print_elf_header(stdout, &elf_file);
-        print_program_header(stdout, &elf_file);    
+        print_program_headers(stdout, &elf_file);
     }
 
-    return ret;
+    return close_elf_file(&elf_file);
 }
