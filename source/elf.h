@@ -1583,5 +1583,6 @@ int close_elf_file(Elf64_File *elf_file);
 
 int print_elf_header(FILE *ostream, Elf64_File *elf_file);
 int print_program_headers(FILE *ostream, Elf64_File *elf_file);
+int print_section_headers(FILE *ostream, Elf64_File *elf_file);
 
 #endif /* _ELF_H_ */

@@ -12,6 +12,7 @@ int main(int argc, char **argv)
     if (!ret) {
         print_elf_header(stdout, &elf_file);
         print_program_headers(stdout, &elf_file);
+        print_section_headers(stdout, &elf_file);
     }
 
     return close_elf_file(&elf_file);

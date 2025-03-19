@@ -17,8 +17,23 @@
 #define EID_SYS_ERROR    errno
 #define EID_NO_EHDR      -1
 #define EID_NO_PHDR      -2
-#define EID_NO_SHDR      -3 
+#define EID_NO_SHDR      -3
 
+
+/****
+ *
+ */
+static void trim_n_format(FILE *ostream, char *src, char *dst, int maxlen)
+{
+    int len = strlen(src);
+
+    if (len > maxlen) {
+        strncpy(dst, src, maxlen - 4);
+        strncpy(dst + maxlen - 4, "[...]", 5);
+    } else {
+        strncpy(dst, src, len);
+    }
+}
 
 
 /****
@@ -280,6 +295,37 @@ int print_program_headers(FILE *ostream, Elf64_File *elf_file)
         }
         fprintf(ostream, "\n");
     }
+    fprintf(ostream, "\n");
 
     return EID_OK;
 }
+
+
+/****
+ *
+ */
+ int print_section_headers(FILE *ostream, Elf64_File *elf_file)
+ {
+    char tmp_str[18] = { 0 };
+    char *shstrtab = elf_file->shstrtab;
+    Elf64_Shdr *sh_table = elf_file->sh_table;
+
+    fprintf(ostream, "There are %d section headers, starting at offset 0x%lx:\n\n",
+        elf_file->ehdr.e_shnum,
+        elf_file->ehdr.e_shoff);
+    fprintf(ostream, "Section Headers:\n"
+                                    "  [Nr] Name              Type             Address           Offset\n"
+                                    "       Size              EntSize          Flags  Link  Info  Align\n");
+  
+    for (int i = 0; i < elf_file->ehdr.e_shnum; ++i) {
+        memset(tmp_str, 0, sizeof(tmp_str));
+        trim_n_format(ostream, &shstrtab[sh_table[i].sh_name], tmp_str, 16);
+        fprintf(ostream, "  [%2d] %-17s %08x         %016lx  %08lx\n", i, tmp_str,
+            sh_table[i].sh_type, sh_table[i].sh_addr, sh_table[i].sh_offset);
+        fprintf(ostream, "        %016lx %016lx   %-4ld %4d  %4d  %4ld\n",
+            sh_table[i].sh_size, sh_table[i].sh_entsize, sh_table[i].sh_flags,
+            sh_table[i].sh_link, sh_table[i].sh_info, sh_table[i].sh_addralign);
+    }
+    
+    return EID_OK;
+ }
