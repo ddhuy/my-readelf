@@ -1099,7 +1099,7 @@
 #define STT_RELC    8       /* Complex relocation expression */
 #define STT_SRELC   9       /* Signed Complex relocation expression */
 #define STT_LOOS    10      /* OS-specific semantics */
-#define STT_GNU_IFUNC   10      /* Symbol is an indirect code object */
+#define STT_GNU_IFUNC   11      /* Symbol is an indirect code object */
 #define STT_HIOS    12      /* OS-specific semantics */
 #define STT_LOPROC  13      /* Processor-specific semantics */
 #define STT_HIPROC  15      /* Processor-specific semantics */
@@ -1572,9 +1572,10 @@ typedef struct
 {
    int fd;
    char *shstrtab;
+   char *strtabs[2];
+   Elf64_Ehdr ehdr;
    Elf64_Phdr *ph_table;
    Elf64_Shdr *sh_table;
-   Elf64_Ehdr ehdr;
 } Elf64_File;
 
 
@@ -1584,5 +1585,6 @@ int close_elf_file(Elf64_File *elf_file);
 int print_elf_header(FILE *ostream, Elf64_File *elf_file);
 int print_program_headers(FILE *ostream, Elf64_File *elf_file);
 int print_section_headers(FILE *ostream, Elf64_File *elf_file);
+int print_symbol_table(FILE *ostream, Elf64_File *elf_file);
 
 #endif /* _ELF_H_ */
