@@ -29,9 +29,9 @@ static void trim_n_format(FILE *ostream, char *src, char *dst, int maxlen)
 
     if (len > maxlen) {
         strncpy(dst, src, maxlen - 4);
-        strncpy(dst + maxlen - 4, "[...]", 5);
+        strcpy(dst + maxlen - 4, "[...]");
     } else {
-        strncpy(dst, src, len);
+        strcpy(dst, src);
     }
 }
 
@@ -322,7 +322,7 @@ int print_program_headers(FILE *ostream, Elf64_File *elf_file)
         trim_n_format(ostream, &shstrtab[sh_table[i].sh_name], tmp_str, 16);
         fprintf(ostream, "  [%2d] %-17s %08x         %016lx  %08lx\n", i, tmp_str,
             sh_table[i].sh_type, sh_table[i].sh_addr, sh_table[i].sh_offset);
-        fprintf(ostream, "        %016lx %016lx   %-4ld %4d  %4d  %4ld\n",
+        fprintf(ostream, "       %016lx  %016lx   %-4ld %4d  %4d  %4ld\n",
             sh_table[i].sh_size, sh_table[i].sh_entsize, sh_table[i].sh_flags,
             sh_table[i].sh_link, sh_table[i].sh_info, sh_table[i].sh_addralign);
     }
