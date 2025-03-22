@@ -13,7 +13,7 @@ OS = size
 
 # compiling flags & linking flags
 INCLUDES = -I./ -I./lib
-CFLAGS   = -Wall -g -O2
+CFLAGS   = -Wall -g
 LDFLAGS  = 
 
 # source directories & files

@@ -1572,7 +1572,6 @@ typedef struct
 {
    int fd;
    char *shstrtab;
-   char *strtabs[2];
    Elf64_Ehdr ehdr;
    Elf64_Phdr *ph_table;
    Elf64_Shdr *sh_table;

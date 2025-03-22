@@ -23,6 +23,26 @@
 /****
  *
  */
+static char* load_strtab(Elf64_File *elf_file, Elf64_Shdr *p_shdr)
+{
+    Elf64_Shdr *p_shdr_strtab = &elf_file->sh_table[p_shdr->sh_link];
+
+    char *strtab = calloc(1, p_shdr_strtab->sh_size);
+    if (strtab) {
+        lseek(elf_file->fd, p_shdr_strtab->sh_offset, SEEK_SET);
+        int count = read(elf_file->fd, strtab, p_shdr_strtab->sh_size);
+        if (count < 0) {
+            free(strtab);
+            return NULL;
+        }
+    }
+    return strtab;
+}
+ 
+  
+/****
+ *
+ */
 static void trim_n_format(FILE *ostream, char *src, char *dst, int maxlen)
 {
     int len = strlen(src);
@@ -57,7 +77,7 @@ static void trim_n_format(FILE *ostream, char *src, char *dst, int maxlen)
         "LOPROC", // 13
         "HIPROC"  // 15
     };
-    
+
     if (stt < 0 || stt > (sizeof(stt_strtab) / sizeof(stt_strtab[0])))
         return NULL;
     return stt_strtab[stt];
@@ -118,7 +138,7 @@ int read_elf_file(const char *filename, Elf64_File *elf_file)
     int count = read(elf_file->fd, (void *) &elf_file->ehdr, sizeof(Elf64_Ehdr));
     if (count < 0)
         return EID_SYS_ERROR;
-    
+
     return EID_OK;
 }
 
@@ -133,25 +153,18 @@ int close_elf_file(Elf64_File *elf_file)
         elf_file->shstrtab = NULL;
     }
 
-    for (int i = 0; i < (sizeof(elf_file->strtabs) / sizeof(elf_file->strtabs[0])); ++i) {
-        if (elf_file->strtabs[i]) {
-            free(elf_file->strtabs[i]);
-            elf_file->strtabs[i] = NULL;
-        }    
-    }
-
     if (elf_file->ph_table) {
         free(elf_file->ph_table);
         elf_file->ph_table = NULL;
     }
-    
+
     if (elf_file->sh_table) {
         free(elf_file->sh_table);
         elf_file->sh_table = NULL;
     }
-    
+
     close(elf_file->fd);
-    
+
     return EID_OK;
 }
 
@@ -303,12 +316,12 @@ int print_program_headers(FILE *ostream, Elf64_File *elf_file)
     // Program headers
     if (elf_file->ehdr.e_phnum == 0 || elf_file->ehdr.e_phoff == 0)
         return EID_NO_PHDR;
-    
+
     elf_file->ph_table = (Elf64_Phdr *) calloc(elf_file->ehdr.e_phnum, sizeof(Elf64_Phdr));
     Elf64_Phdr *ph_table = elf_file->ph_table;
     if (elf_file->ph_table == NULL)
         return EID_SYS_ERROR;
-    
+
     lseek(elf_file->fd, elf_file->ehdr.e_phoff, SEEK_SET);
     count = read(elf_file->fd, (void *) elf_file->ph_table, sizeof(Elf64_Phdr) * elf_file->ehdr.e_phnum);
     if (count < 0)
@@ -333,7 +346,7 @@ int print_program_headers(FILE *ostream, Elf64_File *elf_file)
     char *shstrtab = elf_file->shstrtab;
     if (elf_file->shstrtab == NULL)
         return EID_SYS_ERROR;
-    
+
     lseek(elf_file->fd, sh_table[elf_file->ehdr.e_shstrndx].sh_offset, SEEK_SET);
     count = read(elf_file->fd, (void *) elf_file->shstrtab, sh_table[elf_file->ehdr.e_shstrndx].sh_size);
     if (count < 0)
@@ -353,7 +366,6 @@ int print_program_headers(FILE *ostream, Elf64_File *elf_file)
         fprintf(ostream, " 0x%04x", elf_file->ph_table[i].p_flags);
         fprintf(ostream, " 0x%lx\n", elf_file->ph_table[i].p_align);
     }
-
 
     fprintf(ostream, " Section to Segment mapping:\n");
     fprintf(ostream, "  Segment Sections...\n");
@@ -379,7 +391,6 @@ int print_program_headers(FILE *ostream, Elf64_File *elf_file)
  */
  int print_section_headers(FILE *ostream, Elf64_File *elf_file)
  {
-    int n = 0;
     char tmp_str[18] = { 0 };
     char *shstrtab = elf_file->shstrtab;
     Elf64_Shdr *sh_table = elf_file->sh_table;
@@ -390,7 +401,7 @@ int print_program_headers(FILE *ostream, Elf64_File *elf_file)
     fprintf(ostream, "Section Headers:\n"
                                     "  [Nr] Name              Type             Address           Offset\n"
                                     "       Size              EntSize          Flags  Link  Info  Align\n");
-  
+
     for (int i = 0; i < elf_file->ehdr.e_shnum; ++i) {
         memset(tmp_str, 0, sizeof(tmp_str));
         trim_n_format(ostream, &shstrtab[sh_table[i].sh_name], tmp_str, 16);
@@ -399,19 +410,6 @@ int print_program_headers(FILE *ostream, Elf64_File *elf_file)
         fprintf(ostream, "       %016lx  %016lx   %-4ld %4d  %4d  %4ld\n",
             sh_table[i].sh_size, sh_table[i].sh_entsize, sh_table[i].sh_flags,
             sh_table[i].sh_link, sh_table[i].sh_info, sh_table[i].sh_addralign);
-
-        if (sh_table[i].sh_type == SHT_STRTAB && i != elf_file->ehdr.e_shstrndx
-            && n < (sizeof(elf_file->strtabs) / sizeof(elf_file->strtabs[0]))) {
-            elf_file->strtabs[n] = calloc(1, sh_table[i].sh_size);
-            if (!elf_file->strtabs[n])
-                return EID_SYS_ERROR;
-            lseek(elf_file->fd, sh_table[i].sh_offset, SEEK_SET);
-            int count = read(elf_file->fd, elf_file->strtabs[n], sh_table[i].sh_size);
-            if (count < sh_table[i].sh_size)
-                return EID_SYS_ERROR;
-
-            n += 1;
-        }
     }
     fprintf(ostream, "\n");
 
@@ -425,34 +423,33 @@ int print_program_headers(FILE *ostream, Elf64_File *elf_file)
 int print_symbol_table(FILE *ostream, Elf64_File *elf_file)
 {
     Elf64_Sym symbol;
-    char *strtab = NULL;
-    char *shstrtab = elf_file->shstrtab;
     Elf64_Shdr *sh_table = elf_file->sh_table;
-    
+    char *shstrtab = elf_file->shstrtab;
+
     for (int i = 0; i < elf_file->ehdr.e_shnum; ++i) {
         if (sh_table[i].sh_type == SHT_SYMTAB || sh_table[i].sh_type == SHT_DYNSYM) {
-            if (sh_table[i].sh_type == SHT_DYNSYM)
-                strtab = elf_file->strtabs[0];
-            else if (sh_table[i].sh_type == SHT_SYMTAB)
-                strtab = elf_file->strtabs[1];
-
             int nr_symbols = (sh_table[i].sh_size / sh_table[i].sh_entsize);
-            
+            char *strtab = load_strtab(elf_file, &sh_table[i]);
+
             fprintf(ostream, "Symbol table '%s' contains %d entries:\n",
                 &shstrtab[sh_table[i].sh_name], nr_symbols);
             fprintf(ostream, "   Num:    Value          Size Type    Bind    Vis         Ndx  Name\n");
+
             for (int j = 0; j < nr_symbols; ++j) {
                 lseek(elf_file->fd, sh_table[i].sh_offset + j * sh_table[i].sh_entsize, SEEK_SET);
                 int count = read(elf_file->fd, &symbol, sh_table[i].sh_entsize);
                 if (count < sh_table[i].sh_entsize)
                     return EID_SYS_ERROR;
-                
+
                 fprintf(ostream, "%6d: %016lx  %4ld %-7s %-7s %-7s  %6d  %s\n", j, symbol.st_value, symbol.st_size,
                     symbol_type(ELF64_ST_TYPE(symbol.st_info)), symbol_bind(ELF64_ST_BIND(symbol.st_info)),
                     symbol_visibility(symbol.st_other), symbol.st_shndx, &strtab[symbol.st_name]
-                    );
-            }            
+                );
+            }
             fprintf(ostream, "\n");
+
+            if (strtab)
+                free(strtab);
         }
     }
 
